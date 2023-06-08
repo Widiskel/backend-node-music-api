@@ -1,4 +1,5 @@
 const { nanoid } = require('nanoid');
+const InvariantError = require('../../exceptions/InvariantError');
 
 class AlbumService {
   constructor() {
@@ -19,7 +20,7 @@ class AlbumService {
     const isSuccess = this._album.filter((item) => item.id === id).length > 0;
 
     if (!isSuccess) {
-      throw new Error('Catatan gagal ditambahkan');
+      throw new InvariantError('Album tidak ditemukan');
     }
 
     return newAlbum;

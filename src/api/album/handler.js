@@ -15,7 +15,7 @@ class AlbumHandler {
 
       const response = h.response({
         status: 'success',
-        message: 'Catatan berhasil ditambahkan',
+        message: 'Album baru berhasil ditambahkan',
         data: {
           album,
         },

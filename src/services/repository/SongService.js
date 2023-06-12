@@ -30,14 +30,30 @@ class SongService {
     return result.rows[0].id;
   }
 
-  async getAllSong() {
+  async getAllSong(queryParams) {
+    const { title, performer } = queryParams;
     const query = {
       text: 'SELECT * FROM songs ',
     };
+    const values = [];
+
+    if (title && performer) {
+      query.text += ' WHERE title ILIKE $1 AND performer ILIKE $2';
+      values.push(`%${title}%`, `%${performer}%`);
+    } else if (title) {
+      query.text += ' WHERE title ILIKE $1';
+      values.push(`%${title}%`);
+    } else if (performer) {
+      query.text += ' WHERE performer ILIKE $1';
+      values.push(`%${performer}%`);
+    }
+
+    query.values = values;
     const result = await this._pool.query(query);
+    console.log(query);
 
     if (!result.rows.length) {
-      throw new NotFoundError('Lagu Kosong');
+      throw new NotFoundError('Lagu tidak ditemukan');
     }
 
     return result.rows.map(mapDBSongsToModel);

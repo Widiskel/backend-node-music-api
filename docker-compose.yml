@@ -1,0 +1,22 @@
+version: '3.1'
+
+services:
+
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: music
+      POSTGRES_USER: widiskel
+      POSTGRES_PASSWORD: widiskel
+    ports:
+      - 8091:5432
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8092:8080
+volumes:
+  pg-music:
+    driver: local

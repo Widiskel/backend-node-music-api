@@ -5,6 +5,8 @@ const AlbumValidator = require('./validator/album');
 const AlbumService = require('./services/repository/AlbumService');
 const SongService = require('./services/repository/SongService');
 const SongValidator = require('./validator/song');
+const ClientError = require('./exceptions/ClientError');
+
 require('dotenv').config();
 
 const init = async () => {
@@ -38,6 +40,31 @@ const init = async () => {
         },
     },
   ]);
+
+  server.ext('onPreResponse', (request, h) => {
+    const { response } = request;
+
+    console.log(response);
+    if (response instanceof Error) {
+      if (response instanceof ClientError) {
+        const newResponse = h.response({
+          status: 'error',
+          message: response.message,
+        });
+        newResponse.code(response.statusCode);
+        return newResponse;
+      }
+
+      const newResponse = h.response({
+        status: 'error',
+        message: 'terjadi kegagalan pada server kami',
+      });
+      newResponse.code(500);
+      return newResponse;
+    }
+
+    return h.continue;
+  });
 
   await server.start();
   console.log(`Server berjalan pada ${server.info.uri}`);

@@ -48,7 +48,7 @@ const init = async () => {
     if (response instanceof Error) {
       if (response instanceof ClientError) {
         const newResponse = h.response({
-          status: 'error',
+          status: 'fail',
           message: response.message,
         });
         newResponse.code(response.statusCode);

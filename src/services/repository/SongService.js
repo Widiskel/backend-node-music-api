@@ -50,7 +50,6 @@ class SongService {
 
     query.values = values;
     const result = await this._pool.query(query);
-    console.log(query);
 
     if (!result.rows.length) {
       throw new NotFoundError('Lagu tidak ditemukan');
@@ -65,7 +64,6 @@ class SongService {
       values: [id],
     };
     const result = await this._pool.query(query);
-    console.log(result);
 
     if (!result.rows.length) {
       throw new NotFoundError('Lagu tidak ditemukan');
@@ -95,7 +93,6 @@ class SongService {
       text: `UPDATE songs SET ${setClause} WHERE id = $${values.length + 1} RETURNING id`,
       values: values.concat(id),
     };
-    console.log(query);
 
     const result = await this._pool.query(query);
 

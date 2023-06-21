@@ -1,4 +1,5 @@
 const Hapi = require('@hapi/hapi');
+const Jwt = require('@hapi/jwt');
 
 const albumPlugin = require('./api/album');
 const AlbumValidator = require('./validator/album');
@@ -17,6 +18,17 @@ const AuthService = require('./services/repository/AuthService');
 const TokenManager = require('./tokenize/TokenManager');
 const AuthValidator = require('./validator/auth');
 
+const playlistPlugin = require('./api/playlist');
+const PlaylistService = require('./services/repository/PlaylistService');
+const PlaylistValidator = require('./validator/playlist');
+
+const collabPlugin = require('./api/collab');
+const CollaborationsService = require('./services/repository/CollaborationService');
+const CollabValidator = require('./validator/collab');
+
+const playlistActivityPlugin = require('./api/playlist_activity');
+const PlaylistActivityService = require('./services/repository/PlaylistActivityService');
+
 const ClientError = require('./exceptions/ClientError');
 
 require('dotenv').config();
@@ -26,6 +38,9 @@ const init = async () => {
   const songService = new SongService();
   const usersService = new UsersService();
   const authService = new AuthService();
+  const collabService = new CollaborationsService();
+  const playlistActivityService = new PlaylistActivityService();
+  const playlistService = new PlaylistService(collabService, playlistActivityService);
 
   const server = Hapi.server({
     port: process.env.PORT,
@@ -35,6 +50,28 @@ const init = async () => {
         origin: ['*'],
       },
     },
+  });
+
+  await server.register([
+    {
+      plugin: Jwt,
+    },
+  ]);
+
+  server.auth.strategy('open-music-api-v1', 'jwt', {
+    keys: process.env.ACCESS_TOKEN_KEY,
+    verify: {
+      aud: false,
+      iss: false,
+      sub: false,
+      maxAgeSec: process.env.ACCESS_TOKEN_AGE,
+    },
+    validate: (artifacts) => ({
+      isValid: true,
+      credentials: {
+        id: artifacts.decoded.payload.id,
+      },
+    }),
   });
 
   await server.register([
@@ -63,12 +100,35 @@ const init = async () => {
         },
     },
     {
+      plugin: playlistPlugin,
+      options:
+        {
+          service: playlistService,
+          validator: PlaylistValidator,
+        },
+    },
+    {
       plugin: auth,
       options: {
         authService,
         usersService,
         tokenManager: TokenManager,
         validator: AuthValidator,
+      },
+    },
+    {
+      plugin: collabPlugin,
+      options: {
+        collabService,
+        playlistService,
+        validator: CollabValidator,
+      },
+    },
+    {
+      plugin: playlistActivityPlugin,
+      options: {
+        playlistActivityService,
+        playlistService,
       },
     },
   ]);
@@ -85,6 +145,10 @@ const init = async () => {
         });
         newResponse.code(response.statusCode);
         return newResponse;
+      }
+
+      if (!response.isServer) {
+        return h.continue;
       }
 
       const newResponse = h.response({

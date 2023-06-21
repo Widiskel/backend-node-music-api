@@ -13,6 +13,9 @@ const routes = (handler) => [
     method: 'PUT',
     path: '/albums/{id}',
     handler: handler.updateAlbumByIdHandler,
+    options: {
+      auth: 'open-music-api-v1',
+    },
   },
   {
     method: 'DELETE',

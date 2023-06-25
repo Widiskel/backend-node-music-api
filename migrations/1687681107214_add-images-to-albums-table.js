@@ -6,8 +6,7 @@ exports.up = (pgm) => {
   pgm.addColumn('albums', {
     images: {
       type: 'TEXT',
-      default: '',
-      notNull: true,
+      notNull: false,
     },
   });
 };

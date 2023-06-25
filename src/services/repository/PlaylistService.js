@@ -109,7 +109,8 @@ class PlaylistService {
   }
 
   async getSongFromPlaylist({ playlistId }) {
-    const query = `
+    const query = {
+      text: `
     SELECT p.id AS playlist_id, p.name AS playlist_name, u.username,
     s.id AS song_id, s.title, s.performer
     FROM songs s
@@ -117,10 +118,11 @@ class PlaylistService {
     JOIN playlist p ON p.id = ps.playlist_id
     JOIN users u ON u.id = p.owner
     WHERE p.id = $1
-  `;
-    const values = [playlistId];
+  `,
+      values: [playlistId],
+    };
 
-    const result = await this._pool.query(query, values);
+    const result = await this._pool.query(query);
 
     if (result.rows.length === 0) {
       throw new NotFoundError('Playlist tidak ditemukan');
@@ -174,6 +176,7 @@ class PlaylistService {
       text: 'SELECT * FROM playlist WHERE id = $1',
       values: [id],
     };
+    console.log(query);
     const result = await this._pool.query(query);
     if (!result.rows.length) {
       throw new NotFoundError('Playlist tidak ditemukan');

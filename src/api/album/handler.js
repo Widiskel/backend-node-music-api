@@ -1,12 +1,34 @@
 class AlbumHandler {
-  constructor(service, validator) {
+  constructor(service, validator, storage, uploadValidator) {
+    console.log('AlbumHandler constructor called.');
     this._service = service;
     this._validator = validator;
+    this._storage = storage;
+    this._uploadValidator = uploadValidator;
 
     this.addAlbumHandler = this.addAlbumHandler.bind(this);
     this.getAlbumByIdHandler = this.getAlbumByIdHandler.bind(this);
     this.updateAlbumByIdHandler = this.updateAlbumByIdHandler.bind(this);
     this.deleteAlbumByIdHandler = this.deleteAlbumByIdHandler.bind(this);
+    this.addCoversHandler = this.addCoversHandler.bind(this);
+  }
+
+  async addCoversHandler(request, h) {
+    const { cover: data } = request.payload;
+    this._uploadValidator.validateImageHeaders(data.hapi.headers);
+
+    const { id } = request.params;
+
+    const filename = await this._storage.writeFile(data, data.hapi, 'albums');
+    const fileUrl = `http://${process.env.HOST}:${process.env.PORT}/images/albums/${filename}`;
+
+    await this._service.updateAlbumImage(id, fileUrl);
+    const response = h.response({
+      status: 'success',
+      message: 'Sampul berhasil diunggah',
+    });
+    response.code(201);
+    return response;
   }
 
   async addAlbumHandler(request, h) {

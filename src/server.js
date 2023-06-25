@@ -1,6 +1,9 @@
 const Hapi = require('@hapi/hapi');
 const Jwt = require('@hapi/jwt');
+const Inert = require('@hapi/inert');
+const path = require('path');
 
+const StorageService = require('./storage/StorageService');
 const albumPlugin = require('./api/album');
 const AlbumValidator = require('./validator/album');
 const AlbumService = require('./services/repository/AlbumService');
@@ -29,11 +32,17 @@ const CollabValidator = require('./validator/collab');
 const playlistActivityPlugin = require('./api/playlist_activity');
 const PlaylistActivityService = require('./services/repository/PlaylistActivityService');
 
+const _exports = require('./api/exports');
+const ProducerService = require('./services/rabbitmq/ProducerService');
+const ExportsValidator = require('./validator/exports');
+
 const ClientError = require('./exceptions/ClientError');
+const UploadsValidator = require('./validator/uploads');
 
 require('dotenv').config();
 
 const init = async () => {
+  const storageService = new StorageService(path.resolve(__dirname, 'storage/images/'));
   const albumService = new AlbumService();
   const songService = new SongService();
   const usersService = new UsersService();
@@ -55,6 +64,9 @@ const init = async () => {
   await server.register([
     {
       plugin: Jwt,
+    },
+    {
+      plugin: Inert,
     },
   ]);
 
@@ -78,10 +90,12 @@ const init = async () => {
     {
       plugin: albumPlugin,
       options:
-        {
-          service: albumService,
-          validator: AlbumValidator,
-        },
+      {
+        service: albumService,
+        validator: AlbumValidator,
+        storage: storageService,
+        uploadValidator: UploadsValidator,
+      },
     },
     {
       plugin: songPlugin,
@@ -128,6 +142,14 @@ const init = async () => {
       plugin: playlistActivityPlugin,
       options: {
         playlistActivityService,
+        playlistService,
+      },
+    },
+    {
+      plugin: _exports,
+      options: {
+        service: ProducerService,
+        validator: ExportsValidator,
         playlistService,
       },
     },

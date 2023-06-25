@@ -69,6 +69,20 @@ class AlbumService {
     }
   }
 
+  async updateAlbumImage(id, imagesUrl) {
+    const updatedAt = new Date().toISOString();
+    const query = {
+      text: 'UPDATE albums SET images = $1, updated_at = $2 WHERE id = $3 RETURNING id',
+      values: [imagesUrl, updatedAt, id],
+    };
+
+    const result = await this._pool.query(query);
+
+    if (!result.rows.length) {
+      throw new NotFoundError('Gagal memperbarui albums. Id tidak ditemukan');
+    }
+  }
+
   async deleteAlbumById(id) {
     const query = {
       text: 'DELETE FROM albums WHERE id = $1 RETURNING id',

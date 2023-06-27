@@ -86,6 +86,12 @@ class AlbumService {
 
   async deleteAlbumById(id) {
     this.checkAlbum(id);
+    const query = {
+      text: 'DELETE FROM albums WHERE id = $1 RETURNING id',
+      values: [id],
+    };
+
+    await this._pool.query(query);
   }
 
   async likesAlbum(id, userId) {

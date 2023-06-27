@@ -99,25 +99,27 @@ class AlbumHandler {
     return response;
   }
 
-  async dislikesAlbumHandler(request, h) {
+  async dislikesAlbumHandler(request) {
     const { id } = request.params;
     const { id: userId } = request.auth.credentials;
     await this._service.dislikesAlbum(id, userId);
 
-    const response = h.response({
+    return {
       status: 'success',
-      message: 'Batal album',
-    });
-    response.code(201);
-    return response;
+      message: 'Batal menyukai album',
+    };
   }
 
-  async likesAlbumCountHandler(request) {
+  async likesAlbumCountHandler(request, h) {
     const { id } = request.params;
 
-    const likes = await this._service.likesAlbumCount(id);
+    const [likes, cache] = await this._service.likesAlbumCount(id);
 
-    return likes;
+    const response = h.response(likes);
+    if (cache) {
+      response.header('X-Data-Source', 'cache');
+    }
+    return response;
   }
 }
 

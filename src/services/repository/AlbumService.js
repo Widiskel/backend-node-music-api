@@ -85,19 +85,12 @@ class AlbumService {
   }
 
   async deleteAlbumById(id) {
-    const query = {
-      text: 'DELETE FROM albums WHERE id = $1 RETURNING id',
-      values: [id],
-    };
-
-    const result = await this._pool.query(query);
-
-    if (!result.rows.length) {
-      throw new NotFoundError('Album gagal dihapus. Id tidak ditemukan');
-    }
+    this.checkAlbum(id);
   }
 
   async likesAlbum(id, userId) {
+    this.checkAlbum(id);
+
     const checkQuery = {
       text: 'SELECT * FROM user_album_likes WHERE album_id = $1 AND user_id = $2',
       values: [id, userId],
@@ -120,23 +113,34 @@ class AlbumService {
   }
 
   async dislikesAlbum(id, userId) {
+    this.checkAlbum(id);
+
+    const checkQuery = {
+      text: 'SELECT * FROM user_album_likes WHERE album_id = $1 AND user_id = $2',
+      values: [id, userId],
+    };
+
+    const checkResult = await this._pool.query(checkQuery);
+
+    if (!checkResult.rows.length) {
+      throw new InvariantError('Anda belum pernah menyukai album ini');
+    }
+
     const query = {
       text: 'DELETE FROM user_album_likes WHERE album_id = $1 AND user_id = $2 RETURNING id',
       values: [id, userId],
     };
 
-    const checkResult = await this._pool.query(query);
-
-    if (checkResult.rows.length) {
-      throw new NotFoundError('Anda belum pernah menyukai album ini');
-    }
+    await this._pool.query(query);
     await this._cacheService.delete(`album_likes:${id}`);
   }
 
   async likesAlbumCount(id) {
+    this.checkAlbum(id);
+
     try {
       const result = await this._cacheService.get(`album_likes:${id}`);
-      return JSON.parse(result);
+      return [JSON.parse(result), true];
     } catch (error) {
       const query = {
         text: 'SELECT COUNT(*) FROM user_album_likes WHERE album_id = $1',
@@ -144,22 +148,30 @@ class AlbumService {
       };
 
       const result = await this._pool.query(query);
-
-      if (result.rows.length === 0) {
-        throw NotFoundError('Album id tidak ditemukan');
-      }
-
       const { count } = result.rows[0];
 
       const response = {
         status: 'success',
         data: {
-          likes: count,
+          likes: parseInt(count, 10),
         },
       };
       await this._cacheService.set(`album_likes:${id}`, JSON.stringify(response));
 
-      return response;
+      return [response, false];
+    }
+  }
+
+  async checkAlbum(id) {
+    const checkAlbumQuery = {
+      text: 'SELECT * FROM albums WHERE id = $1',
+      values: [id],
+    };
+
+    const checkAlbum = await this._pool.query(checkAlbumQuery);
+
+    if (!checkAlbum.rows.length) {
+      throw new NotFoundError('Album tidak ditemukan');
     }
   }
 }

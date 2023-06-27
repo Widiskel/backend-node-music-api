@@ -85,13 +85,16 @@ class AlbumService {
   }
 
   async deleteAlbumById(id) {
-    this.checkAlbum(id);
     const query = {
       text: 'DELETE FROM albums WHERE id = $1 RETURNING id',
       values: [id],
     };
 
-    await this._pool.query(query);
+    const result = await this._pool.query(query);
+
+    if (!result.rows.length) {
+      throw new NotFoundError('Gagal menghapus album, Id tidak ditemukan');
+    }
   }
 
   async likesAlbum(id, userId) {

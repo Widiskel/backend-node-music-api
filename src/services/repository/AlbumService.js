@@ -6,8 +6,9 @@ const NotFoundError = require('../../exceptions/NotFoundError');
 const { mapDBSongsToModel } = require('../../utils/dbSongToModel');
 
 class AlbumService {
-  constructor() {
+  constructor(cacheService) {
     this._pool = new Pool();
+    this._cacheService = cacheService;
   }
 
   async addAlbum({ name, year }) {
@@ -93,6 +94,72 @@ class AlbumService {
 
     if (!result.rows.length) {
       throw new NotFoundError('Album gagal dihapus. Id tidak ditemukan');
+    }
+  }
+
+  async likesAlbum(id, userId) {
+    const checkQuery = {
+      text: 'SELECT * FROM user_album_likes WHERE album_id = $1 AND user_id = $2',
+      values: [id, userId],
+    };
+
+    const checkResult = await this._pool.query(checkQuery);
+
+    if (checkResult.rows.length) {
+      throw new InvariantError('Anda telah menyukai album ini');
+    }
+
+    const query = {
+      text: 'INSERT INTO user_album_likes (user_id, album_id) VALUES($1, $2) RETURNING id',
+      values: [userId, id],
+    };
+    const result = await this._pool.query(query);
+    await this._cacheService.delete(`album_likes:${id}`);
+
+    return result.rows[0].id;
+  }
+
+  async dislikesAlbum(id, userId) {
+    const query = {
+      text: 'DELETE FROM user_album_likes WHERE album_id = $1 AND user_id = $2 RETURNING id',
+      values: [id, userId],
+    };
+
+    const checkResult = await this._pool.query(query);
+
+    if (checkResult.rows.length) {
+      throw new NotFoundError('Anda belum pernah menyukai album ini');
+    }
+    await this._cacheService.delete(`album_likes:${id}`);
+  }
+
+  async likesAlbumCount(id) {
+    try {
+      const result = await this._cacheService.get(`album_likes:${id}`);
+      return JSON.parse(result);
+    } catch (error) {
+      const query = {
+        text: 'SELECT COUNT(*) FROM user_album_likes WHERE album_id = $1',
+        values: [id],
+      };
+
+      const result = await this._pool.query(query);
+
+      if (result.rows.length === 0) {
+        throw NotFoundError('Album id tidak ditemukan');
+      }
+
+      const { count } = result.rows[0];
+
+      const response = {
+        status: 'success',
+        data: {
+          likes: count,
+        },
+      };
+      await this._cacheService.set(`album_likes:${id}`, JSON.stringify(response));
+
+      return response;
     }
   }
 }

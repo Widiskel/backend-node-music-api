@@ -11,6 +11,9 @@ class AlbumHandler {
     this.updateAlbumByIdHandler = this.updateAlbumByIdHandler.bind(this);
     this.deleteAlbumByIdHandler = this.deleteAlbumByIdHandler.bind(this);
     this.addCoversHandler = this.addCoversHandler.bind(this);
+    this.likesAlbumHandler = this.likesAlbumHandler.bind(this);
+    this.dislikesAlbumHandler = this.dislikesAlbumHandler.bind(this);
+    this.likesAlbumCountHandler = this.likesAlbumCountHandler.bind(this);
   }
 
   async addCoversHandler(request, h) {
@@ -82,5 +85,40 @@ class AlbumHandler {
       message: 'Album berhasil dihapus',
     };
   }
+
+  async likesAlbumHandler(request, h) {
+    const { id } = request.params;
+    const { id: userId } = request.auth.credentials;
+    await this._service.likesAlbum(id, userId);
+
+    const response = h.response({
+      status: 'success',
+      message: 'Menyukai album',
+    });
+    response.code(201);
+    return response;
+  }
+
+  async dislikesAlbumHandler(request, h) {
+    const { id } = request.params;
+    const { id: userId } = request.auth.credentials;
+    await this._service.dislikesAlbum(id, userId);
+
+    const response = h.response({
+      status: 'success',
+      message: 'Batal album',
+    });
+    response.code(201);
+    return response;
+  }
+
+  async likesAlbumCountHandler(request) {
+    const { id } = request.params;
+
+    const likes = await this._service.likesAlbumCount(id);
+
+    return likes;
+  }
 }
+
 module.exports = AlbumHandler;

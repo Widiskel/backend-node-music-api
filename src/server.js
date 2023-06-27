@@ -39,11 +39,14 @@ const ExportsValidator = require('./validator/exports');
 const ClientError = require('./exceptions/ClientError');
 const UploadsValidator = require('./validator/uploads');
 
+const CacheService = require('./services/redis/CacheService');
+
 require('dotenv').config();
 
 const init = async () => {
+  const cacheService = new CacheService();
   const storageService = new StorageService(path.resolve(__dirname, 'storage/images/'));
-  const albumService = new AlbumService();
+  const albumService = new AlbumService(cacheService);
   const songService = new SongService();
   const usersService = new UsersService();
   const authService = new AuthService();

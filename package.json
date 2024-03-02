@@ -1,7 +1,7 @@
 {
-  "name": "open-music-api-v1",
+  "name": "open-music-api-node",
   "version": "1.0.0",
-  "description": "Open Music API V1 dicoding first Task",
+  "description": "Open Music API",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -28,6 +28,10 @@
     "nodemon": "^2.0.22",
     "pg": "^8.11.0",
     "redis": "^4.6.7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Widiskel/backend-node-music-api.git"
   },
   "devDependencies": {
     "eslint": "^8.42.0",

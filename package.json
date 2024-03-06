@@ -1,6 +1,6 @@
 {
   "name": "open-music-api-node",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Open Music API",
   "main": "index.js",
   "scripts": {
